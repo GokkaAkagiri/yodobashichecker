@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  # Webダッシュボード用コンテナ
+  web:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "4567:4567"
+    volumes:
+      # ホスト側の ./db をコンテナ内の /app/db にマウントしてSQLiteを永続化
+      - ./db:/app/db
+    environment:
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
+      - TZ=Asia/Tokyo
+
+  # 定期実行スクレイピング用コンテナ
+  worker:
+    build: .
+    restart: unless-stopped
+    command: bundle exec ruby worker.rb
+    volumes:
+      # worker側でも同じDBファイルを参照できるようにマウント
+      - ./db:/app/db
+    environment:
+      - DISCORD_WEBHOOK_URL=${DISCORD_WEBHOOK_URL}
+      - TZ=Asia/Tokyo

@@ -1,0 +1,19 @@
+# Mac(Linux)のcron機能を使って、このスクリプトを定期実行するための設定例です。
+
+# 1. ターミナルで以下のコマンドを実行し、cronの編集画面を開きます
+# crontab -e
+
+# 2. 以下の行を追記します (保存して閉じると設定完了です)
+# ※ /Users/kenjim/workspace/priceCheck の部分は実際のパスに合わせてください。
+# ※ ruby コマンドのパスは、環境によって異なる場合があります (`which ruby` で確認できます)。
+# ※ DISCORD_WEBHOOK_URL は実際のWebhook URLに置き換えてください。
+
+# 毎日 朝8:00 と 夜20:00 の2回実行する設定例
+0 8,20 * * * cd /Users/kenjim/workspace/priceCheck && DISCORD_WEBHOOK_URL="https://discord.com/api/webhooks/YOUR_WEBHOOK_URL" bundle exec ruby main.rb >> /Users/kenjim/workspace/priceCheck/cron.log 2>&1
+
+# (補足)
+# 0 8,20 * * * : 実行タイミングの指定 (分 時 日 月 曜日)
+# cd ... : スクリプトのあるディレクトリに移動
+# DISCORD_WEBHOOK_URL="..." : 実行時に環境変数をセット
+# bundle exec ruby main.rb : スクリプトの実行
+# >> cron.log 2>&1 : 実行ログとエラーログを cron.log ファイルに保存する

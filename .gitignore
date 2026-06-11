@@ -1,0 +1,21 @@
+# Database
+db/*.sqlite3
+db/*.sqlite3-journal
+db/*.sqlite3-shm
+db/*.sqlite3-wal
+
+# Ruby/Bundler
+.bundle/
+vendor/bundle/
+*.gem
+.ruby-version
+
+# Docker
+.dockerignore
+
+# macOS
+.DS_Store
+
+# Scraping dumps/logs
+*.html
+*.log
