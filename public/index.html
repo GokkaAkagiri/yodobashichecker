@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ヨドバシ価格チェッカー</title>
+  <link rel="stylesheet" href="/styles.css?v=2">
+  <!-- Chart.js 読み込み -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-container">
+    <header class="glass-header">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <div>
+        <h1>ヨドバシ価格チェッカー</h1>
+        <p>気になる商品の価格推移を自動でトラッキング</p>
+      </div>
+      <div>
+        <button id="btn-open-settings" class="btn-secondary" style="padding: 0.5rem 1rem; font-size: 0.9rem;">⚙️ 設定</button>
+      </div>
+    </div>
+  </header>
+
+    <main>
+      <!-- 商品登録フォーム (Javaで言うところの JSP や Thymeleaf の form部分) -->
+      <section class="card form-section glass-panel">
+        <h2>新しい商品を登録</h2>
+        <form id="add-product-form">
+          <div class="form-group">
+            <label for="name">商品名</label>
+            <input type="text" id="name" name="name" placeholder="例: Nintendo Switch" required>
+          </div>
+          <div class="form-group">
+            <label for="url">ヨドバシ.comのURL</label>
+            <input type="url" id="url" name="url" placeholder="https://www.yodobashi.com/..." required>
+          </div>
+          <div class="form-group">
+            <label for="target_price">目標価格（通知ライン）</label>
+            <input type="number" id="target_price" name="target_price" placeholder="30000" min="0">
+          </div>
+          <button type="submit" class="btn-primary">登録する</button>
+          <button type="button" id="btn-open-bulk" class="btn-secondary" style="margin-left: 1rem;">一括登録 (URLペースト)</button>
+        </form>
+        <div id="form-message" class="hidden"></div>
+      </section>
+
+      <!-- 登録された商品のリストとグラフ -->
+      <section class="products-section">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+          <h2 style="margin: 0;">トラッキング中の商品リスト</h2>
+          
+          <div style="display: flex; gap: 1rem; align-items: center;">
+            <select id="sort-select" style="padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 4px; background: white;">
+              <option value="discount-desc">割引率が高い順</option>
+              <option value="discount-asc">割引率が低い順</option>
+              <option value="price-asc">価格が安い順</option>
+              <option value="price-desc">価格が高い順</option>
+              <option value="date-desc">登録が新しい順</option>
+              <option value="date-asc">登録が古い順</option>
+            </select>
+            
+            <div class="view-toggles" style="display: flex; gap: 0.5rem;">
+              <button class="btn-filter active" data-view="grid">グリッド</button>
+              <button class="btn-filter" data-view="list">リスト</button>
+            </div>
+          </div>
+        </div>
+        <div id="products-container" class="products-grid">
+          <!-- 商品リストがここに動的に追加される -->
+          <div class="loading-spinner">データを読み込み中...</div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- 編集モーダル -->
+  <div id="edit-modal" class="modal-overlay hidden">
+    <div class="modal-content glass-panel">
+      <h2>商品を編集</h2>
+      <form id="edit-product-form">
+        <input type="hidden" id="edit-id">
+        <div class="form-group">
+          <label for="edit-name">商品名</label>
+          <input type="text" id="edit-name" name="name" required>
+        </div>
+        <div class="form-group">
+          <label for="edit-target_price">目標価格</label>
+          <input type="number" id="edit-target_price" name="target_price" required min="0">
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="cancel-edit" class="btn-secondary">キャンセル</button>
+          <button type="submit" class="btn-primary">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 一括登録モーダル -->
+  <div id="bulk-modal" class="modal-overlay hidden">
+    <div class="modal-content glass-panel" style="max-width: 600px;">
+      <h2>一括登録</h2>
+      <p style="color: var(--text-secondary); margin-bottom: 1rem; font-size: 0.9rem;">
+        ヨドバシ.comの商品URLを1行に1つずつ貼り付けてください。<br>
+        登録後、システムが裏側で順番にスクレイピングを行います（1件数秒かかります）。
+      </p>
+      <form id="bulk-form">
+        <div class="form-group">
+          <textarea id="bulk-urls" rows="10" placeholder="https://www.yodobashi.com/product/1000...&#10;https://www.yodobashi.com/product/2000..." required style="width: 100%; background: rgba(0,0,0,0.2); border: 1px solid var(--glass-border); color: #fff; padding: 0.5rem; border-radius: 4px; resize: vertical;"></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" id="cancel-bulk" class="btn-secondary">キャンセル</button>
+          <button type="submit" class="btn-primary">一括登録を開始</button>
+        </div>
+        <div id="bulk-message" class="hidden" style="margin-top: 1rem;"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 設定モーダル -->
+  <div id="settings-modal" class="modal-overlay hidden">
+    <div class="modal-content glass-panel" style="max-width: 600px;">
+      <h2>システム設定</h2>
+      <form id="settings-form">
+        <div class="form-group">
+          <label for="webhook-url">Discord Webhook URL</label>
+          <input type="url" id="webhook-url" placeholder="https://discord.com/api/webhooks/..." style="width: 100%; border: 1px solid var(--border-color); padding: 0.5rem; border-radius: 4px;">
+          <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.5rem;">設定すると、通知がDiscordに送信されます。</p>
+        </div>
+        
+        <div style="margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+          <h3 style="font-size: 1rem; margin-top: 0; margin-bottom: 0.5rem;">一括操作</h3>
+          <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem;">登録されている全商品の目標価格を、現在の価格から自動計算（10%OFF）して一括で更新します。</p>
+          <button type="button" id="btn-bulk-update-targets" class="btn-primary" style="background-color: #eab308; color: #fff; border: none;">全商品の目標価格を一括更新 (10%OFF)</button>
+          <div id="bulk-update-message" class="hidden" style="margin-top: 0.5rem; font-size: 0.9rem;"></div>
+        </div>
+
+        <div class="modal-actions" style="margin-top: 2rem;">
+          <button type="button" id="cancel-settings" class="btn-secondary">キャンセル</button>
+          <button type="submit" class="btn-primary">保存する</button>
+        </div>
+        <div id="settings-message" class="hidden" style="margin-top: 1rem;"></div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 詳細モーダル -->
+  <div id="detail-modal" class="modal-overlay hidden">
+    <div class="modal-content glass-panel" style="max-width: 900px; width: 95%;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+        <h2 id="detail-title" style="margin: 0; font-size: 1.2rem; flex: 1;">商品詳細</h2>
+        <div class="chart-filters" style="display: flex; gap: 0.5rem;" id="detail-chart-filters">
+          <button class="btn-filter" data-range="1w">1週間</button>
+          <button class="btn-filter" data-range="1m">1ヶ月</button>
+          <button class="btn-filter" data-range="1y">1年</button>
+          <button class="btn-filter active" data-range="all">全期間(最大10年)</button>
+        </div>
+      </div>
+      <div style="height: 400px; width: 100%; position: relative;">
+        <canvas id="detail-chart"></canvas>
+      </div>
+      <div class="modal-actions" style="margin-top: 1.5rem;">
+        <button type="button" id="close-detail" class="btn-secondary">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/script.js?v=6"></script>
+</body>
+</html>

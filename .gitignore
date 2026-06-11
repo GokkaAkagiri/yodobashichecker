@@ -17,5 +17,4 @@ vendor/bundle/
 .DS_Store
 
 # Scraping dumps/logs
-*.html
 *.log
