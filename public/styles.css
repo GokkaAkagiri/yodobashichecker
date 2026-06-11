@@ -456,26 +456,35 @@ body {
 
   /* リスト表示でのレイアウト崩れ防止 */
   .products-list .product-card {
-    flex-direction: column;
-    align-items: flex-start;
+    flex-direction: column !important;
+    align-items: stretch !important;
   }
   
   .products-list .product-header {
-    width: 100%;
+    width: 100% !important;
+  }
+  
+  .products-list .product-title {
+    white-space: normal !important; /* 長い商品名の突き抜けを防止 */
+    overflow: visible !important;
   }
   
   .products-list .product-stats {
-    width: 100%;
-    margin-top: 1rem;
-    gap: 1rem;
-    flex-wrap: wrap;
-    justify-content: space-between;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    width: 100% !important;
+    margin-top: 1rem !important;
+    padding: 1rem !important;
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 8px !important;
   }
   
   .products-list .card-actions {
-    width: 100%;
-    justify-content: flex-end;
-    margin-top: 1rem;
+    width: 100% !important;
+    justify-content: flex-end !important;
+    margin-top: -1rem !important;
+    margin-bottom: 1rem !important;
   }
 
   /* 並び替えセレクトボックス周り */
