@@ -45,7 +45,7 @@ def send_discord_notification(product, new_data, old_data, reason)
              "URL: #{product.url}"
   }
 
-  uri = URI.parse(DISCORD_WEBHOOK_URL)
+  uri = URI.parse(webhook_url)
   http = Net::HTTP.new(uri.host, uri.port)
   http.use_ssl = true
   request = Net::HTTP::Post.new(uri.request_uri, { 'Content-Type' => 'application/json' })
