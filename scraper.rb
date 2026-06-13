@@ -36,7 +36,7 @@ class YodobashiScraper
     # ヨドバシ.comの価格とポイント表示部分をCSSセレクタで抽出
     # ※サイトのHTML構造が変わった場合は、ここを調整する必要があります
     price_text = doc.at_css('#js_scl_unitPrice')&.text
-    point_rate_text = doc.at_css('#js_scl_pointRate')&.text || doc.at_css('.pointRate')&.text || doc.at_css('.point-rate')&.text
+    point_rate_text = doc.at_css('#js_scl_pointRate')&.text || doc.at_css('#js_scl_pointrate')&.text || doc.at_css('.pointRate')&.text || doc.at_css('.point-rate')&.text
     
     # 取れなかった場合のフォールバック（別セレクタを試す）
     if price_text.nil?

@@ -102,13 +102,13 @@ def check_and_notify(product, data, is_manual = false)
   end
 
   # 4. 目標価格到達
-  if product.target_price > 0 && data[:effective_price] <= product.target_price
+  if product.target_price > 0 && data[:effective_price] > 0 && data[:effective_price] <= product.target_price
     should_notify = true
     notify_reasons << "🎯 目標価格を下回りました！"
   end
 
   # 5. 50%OFF（今すぐ買えアラート）と10%OFF通知
-  if initial_history
+  if initial_history && initial_history.effective_price > 0 && data[:effective_price] > 0
     if data[:effective_price] <= initial_history.effective_price * 0.5
       should_notify = true
       notify_reasons << "🚨 **【超特大アラート】今すぐ買え！登録時から50%OFF（半額以下）になっています！！**"
