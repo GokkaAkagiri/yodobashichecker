@@ -41,8 +41,8 @@ get '/api/products' do
     histories = product.price_histories.order(created_at: :asc)
 
     initial_history = product.price_histories.order(created_at: :asc).first
-    initial_price = initial_history ? initial_history.effective_price : (latest_history ? latest_history.effective_price : 0)
-    current_price = latest_history ? latest_history.effective_price : 0
+    initial_price = initial_history ? initial_history.price : (latest_history ? latest_history.price : 0)
+    current_price = latest_history ? latest_history.price : 0
     discount_rate = initial_price > 0 ? (((initial_price - current_price).to_f / initial_price) * 100).round(1) : 0
 
     {
@@ -58,9 +58,9 @@ get '/api/products' do
       updated_at: latest_history ? latest_history.created_at.strftime("%Y/%m/%d %H:%M") : nil,
       chart_data: histories.map do |h| 
         {
-          x: h.created_at.iso8601, # ISO8601形式で日付を渡す(JS側でフィルタやフォーマットしやすいように)
-          y: h.effective_price,
-          label: h.created_at.strftime("%Y/%m/%d %H:%M")
+          x: h.created_at.strftime("%Y-%m-%d %H:%M"),
+          y: h.price,
+          tooltip: "ポイント: #{h.point_rate}%"
         }
       end
     }
@@ -100,8 +100,8 @@ post '/api/products' do
 
   # 10%OFFの目標価格を計算 (1の位切り捨て: 例 11115 -> 11110)
   default_target = 0
-  if scraped_data[:effective_price] && scraped_data[:effective_price] > 0
-    calculated = scraped_data[:effective_price] * 0.9
+  if scraped_data[:price] && scraped_data[:price] > 0
+    calculated = scraped_data[:price] * 0.9
     default_target = (calculated / 10).floor * 10
   end
 
@@ -216,8 +216,8 @@ post '/api/products/bulk' do
           if data
             # 10%OFFの目標価格を計算 (1の位切り捨て)
             default_target = 0
-            if data[:effective_price] && data[:effective_price] > 0
-              calculated = data[:effective_price] * 0.9
+            if data[:price] && data[:price] > 0
+              calculated = data[:price] * 0.9
               default_target = (calculated / 10).floor * 10
             end
 
@@ -260,8 +260,8 @@ post '/api/products/bulk_update_targets' do
 
   products.each do |p|
     latest = p.price_histories.order(created_at: :desc).first
-    if latest && latest.effective_price && latest.effective_price > 0
-      calculated = latest.effective_price * 0.9
+    if latest && latest.price && latest.price > 0
+      calculated = latest.price * 0.9
       new_target = (calculated / 10).floor * 10
       p.update!(target_price: new_target)
       updated_count += 1

@@ -33,13 +33,13 @@ def send_discord_notification(product, new_data, old_data, reason)
     return
   end
 
-  old_price = old_data ? old_data.effective_price : 'なし'
+  old_price = old_data ? old_data.price : 'なし'
   
   message = {
     content: "📢 **ヨドバシ価格アラート**\n" \
              "【#{product.name}】\n" \
              "理由: #{reason}\n" \
-             "現在の実質価格: **#{new_data[:effective_price]}円** (販売価格: #{new_data[:price]}円, ポイント: #{new_data[:point_rate]}%)\n" \
+             "現在の価格: **#{new_data[:price]}円** (ポイント還元: #{new_data[:point_rate]}%, 実質価格: #{new_data[:effective_price]}円)\n" \
              "前回取得時の価格: #{old_price}円\n" \
              "目標設定価格: #{product.target_price}円\n" \
              "URL: #{product.url}"
@@ -83,38 +83,37 @@ def check_and_notify(product, data, is_manual = false)
       notify_reasons << "🟢 **在庫補充！** (#{old_stock} → #{new_stock})"
     end
 
-    # 2. 値上がり警告（過去最高価格を更新した場合）
-    # 歴代最高実質価格を取得
-    highest_price = product.price_histories.maximum(:effective_price) || 0
-    if data[:effective_price] > highest_price && data[:effective_price] > latest_history.effective_price
-      # 1%以上の値上がりのみ通知
-      if data[:effective_price] >= latest_history.effective_price * 1.01
+    # 2. 過去最高値の更新 (じわじわ値上げを検知)
+    highest_price = product.price_histories.maximum(:price) || 0
+    if data[:price] > highest_price && data[:price] > latest_history.price
+      # 値上げ幅が1%以上の場合のみ通知 (微細な変動を弾く)
+      if data[:price] >= latest_history.price * 1.01
         should_notify = true
-        notify_reasons << "📈 **値上がり警告** (過去最高価格を更新: 今のうちに買った方がいいかも？)"
+        notify_reasons << "📈 過去最高値を更新して値上がりしました（現在価格: #{data[:price]}円）"
       end
     end
-
-    # 3. 通常の値下がり（前回より安くなった）
-    if data[:effective_price] < latest_history.effective_price
+    
+    # 3. 単純な値下げ検知 (前回よりも安くなった)
+    if data[:price] < latest_history.price
       should_notify = true
-      notify_reasons << "📉 価格が前回より下がりました"
+      notify_reasons << "📉 前回より値下げされました！（#{latest_history.price}円 → #{data[:price]}円）"
     end
   end
 
   # 4. 目標価格到達
-  if product.target_price > 0 && data[:effective_price] > 0 && data[:effective_price] <= product.target_price
+  if product.target_price > 0 && data[:price] > 0 && data[:price] <= product.target_price
     should_notify = true
     notify_reasons << "🎯 目標価格を下回りました！"
   end
 
   # 5. 50%OFF（今すぐ買えアラート）と10%OFF通知
-  if initial_history && initial_history.effective_price > 0 && data[:effective_price] > 0
-    if data[:effective_price] <= initial_history.effective_price * 0.5
+  if initial_history && initial_history.price > 0 && data[:price] > 0
+    if data[:price] <= initial_history.price * 0.5
       should_notify = true
-      notify_reasons << "🚨 **【超特大アラート】今すぐ買え！登録時から50%OFF（半額以下）になっています！！**"
-    elsif product.target_price == 0 && data[:effective_price] <= initial_history.effective_price * 0.9
+      notify_reasons << "🚨 **【超特大アラート】今すぐ買え！登録時の表示価格から50%OFF（半額以下）になっています！！**"
+    elsif product.target_price == 0 && data[:price] <= initial_history.price * 0.9
       should_notify = true
-      notify_reasons << "🏷️ 登録時の価格から **10%OFF** になりました！"
+      notify_reasons << "🏷️ 登録時の表示価格から **10%OFF** になりました！"
     end
   end
 

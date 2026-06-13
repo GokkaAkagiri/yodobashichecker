@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
         <div class="product-stats">
           <div class="stat-item">
-            <span class="stat-label">現在の実質価格</span>
+            <span class="stat-label">現在の価格</span>
             <span class="stat-value">${priceDisplay}${discountDisplay}</span>
           </div>
           <div class="stat-item" style="text-align: right;">
@@ -182,7 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
         data: {
           labels: filteredData.labels,
           datasets: [{
-            label: '実質価格 (円)',
+            label: '価格 (円)',
             data: filteredData.dataset,
                 borderColor: '#3b82f6',
                 backgroundColor: gradient,
